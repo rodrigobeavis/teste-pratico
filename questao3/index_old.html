@@ -1,0 +1,491 @@
+<style type="text/css">
+    textarea{
+        width: 500px;
+        height: 400px;
+    }
+</style>
+ <!-- <form action="<?php //base_url();   ?>home/importCnis" method="POST"> -->
+<table>
+    <tr>
+        <td valign="top">
+            <textarea name="formTextBox" id="formTextBox" class="formTextBox"></textarea>
+        </td>
+        <td class="inputs"></td>
+    </tr>
+    <tr>
+        <td colspan="2">
+                <!-- <input type="submit" value="Importar"> -->
+            <button id="btn_import" class="btnGo">Importar</button>
+            <!-- </form> -->
+        </td>
+    </tr>viw2jsajajskdj
+</table>
+viw2jsajajskdj
+viw2jsajajskdj
+viw2jsajajskdj
+ <!-- <script type="text/javascript" src="<?php //echo base_url()  ?>js/jquery.min.js"></script> -->
+<table>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+view 2
+view 45
+    <script type="text/javascript">
+
+function creatArrayObjetosNew(text, num_col) {
+            var arrayOrganizadoNew = [];
+            var arrayText = [];
+            for (var i = 0; i < text.length; i++) {
+                arrayText = text[i].replace(/\n/i, ' ').trim().split(/\s/i);
+
+                arrayOrganizadoNew.push({
+                    data: arrayText[0].trim(),
+                    contrib: arrayText[num_col].trim(),
+                    contributionType: true
+                });
+            }
+            return arrayOrganizadoNew;
+}
+
+
+      //  function creatArrayObjetos(text, num_col) {
+        function aplicarRegras(arrayOrganizado) {
+
+            var replacePontos = function (valor) {
+                for (var i = 0; i < 4; i++) {
+                    valor = valor.replace('.', '');
+                }
+                return parseFloat(valor.replace(',', '.'));
+            };
+
+            //var formatter = new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2, });
+
+            var somaContrib = function (valor1, valor2) {
+                return Number((replacePontos(valor1) + replacePontos(valor2)).toFixed(2)).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            };
+
+            //Ordena o array pela data para organizar as secundarias
+           /* arrayOrganizado.sort(function (a, b) {
+                return Date.parse(a.data) > Date.parse(b.data);
+            });*/
+
+        /*    function compare(a,b) {
+                if (Date.parse(a.data) <  Date.parse(b.data))
+                    return -1;
+                if (Date.parse(a.data) >  Date.parse(b.data))
+                    return 1;
+                return 0;
+                }
+
+           arrayOrganizado.sort(compare);*/
+           
+            function dateFormat(date){
+                    var parts = date.split("/");
+                    return new Date(parts[1], parts[0], "01");
+              }
+
+            arrayOrganizado.sort(function(a, b){
+                var dateA = dateFormat(a.data), dateB = dateFormat(b.data);
+             //   $('.inputs').append('<label>'+dateB+'</label> === <label>'+dateA+'</label><br>');
+                return (dateA-dateB); //sort by date ascending
+            });
+           
+          // console.log(arrayOrganizado);
+                     
+
+            var teste_data = null;
+            arrayOrganizado.filter(function (i, index) {
+
+              //  $('.inputs').append('<label>'+index+' -- </label><label>'+i.data+'</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<label>'+teste_data+'</label>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<label>'+(i.data != teste_data)+'</label> <br>');
+                 if (i.data != teste_data) {
+                     i.contributionType = true;
+                     teste_data = i.data;
+                 } else {
+                     i.contributionType = false; // false para secundarias
+                 }
+                 
+             });
+
+            // teste_data = arrayOrganizado[0].data
+            // for (var i = 0; i < arrayOrganizado.length; i++) {
+
+            //     console.log(arrayOrganizado[i].data != teste_data);
+               
+            //    if (arrayOrganizado[i].data == teste_data) {
+            //          arrayOrganizado[i].contributionType = true;
+            //          teste_data = arrayOrganizado[i].data;
+            //      } else {
+            //          arrayOrganizado[i].contributionType = false; // false para secundarias
+            //      }
+                 
+            //  }
+
+           /*  for (var i = 0; i < arrayOrganizado.length; i++) {
+
+                console.log(arrayOrganizado[i].data != teste_data);
+               
+               if (arrayOrganizado[i].data != teste_data) {
+                     arrayOrganizado[i].contributionType = true;
+                     teste_data = arrayOrganizado[i].data;
+                 } else {
+                     arrayOrganizado[i].contributionType = false; // false para secundarias
+                 }
+                 
+             }*/
+
+          return arrayOrganizado;
+
+           //reduzir o array somando item onde value.data+"-"+value.contributionType são iguais
+        /*    var result = [];
+            arrayOrganizado.reduce(function (res, value) {
+                if (!res[value.data + "-" + value.contributionType]) {
+                    res[value.data + "-" + value.contributionType] = {
+                        contrib: "0,00",
+                        data: value.data,
+                        contributionType: value.contributionType
+                    };
+                    result.push(res[value.data + "-" + value.contributionType])
+                }
+                res[value.data + "-" + value.contributionType].contrib = somaContrib(res[value.data + "-" + value.contributionType].contrib, value.contrib);
+                return res;
+            }, {});
+
+
+            return result;*/
+        }
+
+        //montar o input na tela
+     //   function postDadosContribuition(text, num_col) {
+            function postDadosContribuition(array_com_regras) {
+
+            var calculationKeys = '<%= this . calculationKeys %>',
+                     assuredId = '<%= this . assuredId %>';
+
+              var requestsSucedidas = 0;
+
+              var contributionSum = 0.00;
+              var dataSub = [];
+              var contributionType = true;
+              var arrayOrganizado = array_com_regras;
+              var array_data_post = [];
+
+              var count1 = arrayOrganizado.length;
+              var count = 0;
+
+              //console.log(arrayOrganizado);
+
+              for (var i = 0; i < arrayOrganizado.length; i++) {
+                  dataSub = arrayOrganizado[i].data.split("/");
+                  contribFinal = arrayOrganizado[i].contrib.replace(".", "").replace(".", "").replace(".", "");
+                  contributionType = arrayOrganizado[i].contributionType;
+
+                  //setTimeout(function () { }, 1000);
+                  $('.inputs').append('<label> |Data: <input value="'+dataSub+'"/></label><label> |Contribuicao: <input value="'+contribFinal+'"/></label><label> |Type: <input value="'+contributionType+'"/></label><input class=".teste_check" type="checkbox"><br>');
+           
+                var obj = {
+                    'calcKeys': calculationKeys,
+                    'assuredId': assuredId,
+                    'minYear': dataSub[1],
+                    'minMonth': dataSub[0],
+                    'maxYear': dataSub[1],
+                    'maxMonth': dataSub[0],
+                    'value': contribFinal,
+                    'contributionType': contributionType
+            
+                }
+                array_data_post.push(obj);
+
+
+                //   $.ajax({
+                //       type: "POST",
+                //       url: "insert_values.aspx",
+                //       data: {
+                //           calcKeys: calculationKeys,
+                //           assuredId: assuredId,
+                //           minYear: dataSub[1],
+                //           minMonth: dataSub[0],
+                //           maxYear: dataSub[1],
+                //           maxMonth: dataSub[0],
+                //           value: contribFinal,
+                //           contributionType: contributionType
+                //       },
+
+                //       error: function (xhr, status, error) {
+                //           if (requestsSucedidas > 0) {
+                //               alert("Erro na importação, favor tentar novamente mais tarde");
+                //               requestsSucedidas = -5000;
+                //           }
+                //           console.log(error);
+                //       },
+                //       success: function () {
+                //           count++;
+                //           if (requestsSucedidas >= 0) {
+                //               // console.log('sucesso, requests sucedidas: ' + requestsSucedidas + ', qtdTotal: ' + qtdRequests);
+                //               requestsSucedidas += 1;
+
+                //               if (count == count1) {
+                //                 //  window.location.href = 'contribution_values.aspx?assuredId=' + assuredId + '&calculation=' + calculationKeys;
+                //               }
+                //           }
+                //       }
+                //   });
+
+              }
+              $.ajax({
+                      type: "POST",
+                      url: "insert_values.aspx",
+                      dataType: "json",
+                      //data: JSON.stringify(array_data_post),
+                      data: {'dados': array_data_post},
+                    error: function () {
+                          if (requestsSucedidas > 0) {
+                              alert("Erro na importação, favor tentar novamente mais tarde");
+                              requestsSucedidas = -5000;
+                          }
+                      },
+                      success: function (rst) {
+                       // console.log(rst);
+                          count++;
+                          if (requestsSucedidas >= 0) {
+                              // console.log('sucesso, requests sucedidas: ' + requestsSucedidas + ', qtdTotal: ' + qtdRequests);
+                              requestsSucedidas += 1;
+
+                              if (count == count1) {
+                                  console.log("OK");
+                                 window.location.href = 'contribution_values.aspx?assuredId=' + assuredId + '&calculation=' + calculationKeys;
+                              }
+                          }
+                      }
+                  });
+
+          }
+
+          /**
+           * Convert o texto em um array
+           * @returns {void}
+           */
+          function newImportText() {
+
+              var text = $('.formTextBox').val();
+
+              if (text) {
+                  $('.wait_icon').show();
+                  text = text.trim().replace('\n', '\t');
+                  //(\s|\t|\n)(\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})|(\s|\n|\t)(\d{2}\/\d{4})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})
+                  // (\s|\n|\t)(\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2})|(\s|\t)(\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2})(\s|\t)(\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2});
+                  //(\s|\n|\t|\r)((\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2}))(?!\s\d{2}\/\d{2}\/\d{4})
+                  var empregado = null;
+                  var facultativoOuIndividual = null;
+
+                   var empregado_array = [];
+                  var facultativoOuIndividual_array = [];
+                  var todas_os_periodos_array = [];
+                  var regras_aplicadas_array = [];
+                  
+
+                  empregado = text.match(/(\s|\n|\t|\r)((\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2}))(?!\s\d{2}\/\d{2}\/\d{4})/g);
+                  facultativoOuIndividual = text.match(/(\s|\t|\n)(\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})|(\s|\n|\t)(\d{2}\/\d{4})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})/g);
+                 
+               
+                if (empregado && typeof empregado !== 'undefined') {
+                        empregado_array =  creatArrayObjetosNew(empregado, 1);
+                    }
+                 if (facultativoOuIndividual && typeof facultativoOuIndividual !== 'undefined') {
+                         facultativoOuIndividual_array = creatArrayObjetosNew(facultativoOuIndividual, 3);
+                   }
+                
+                 if ((empregado && typeof empregado !== 'undefined')  && (facultativoOuIndividual && typeof facultativoOuIndividual !== 'undefined')) {
+
+                        todas_os_periodos_array = empregado_array.concat(facultativoOuIndividual_array);
+
+                    }else if((empregado && typeof empregado !== 'undefined')  && (!facultativoOuIndividual || typeof facultativoOuIndividual == 'undefined')){
+
+                        todas_os_periodos_array = empregado_array;
+
+                    }else if((!empregado || typeof empregado == 'undefined')  && (facultativoOuIndividual && typeof facultativoOuIndividual !== 'undefined')){
+
+                        todas_os_periodos_array = facultativoOuIndividual_array;
+
+                    }
+                  
+                      regras_aplicadas_array =   aplicarRegras(todas_os_periodos_array);
+
+                   postDadosContribuition(regras_aplicadas_array) 
+
+                  
+              } else {
+                  window.alert("Preencha o campo com os dados do CNIS.");
+              }
+          }
+
+          $(document).ready(function () {
+              $(".btnGo").click(function () {
+                  newImportText();
+              });
+          });
+    </script>
+
+
+    <script type="text/javascript">
+
+        // function creatArrayObjetos(text, num_col) {
+        //     var arrayOrgaizado = [];
+        //     var arrayText = [];
+        //     for (var i = 0; i < text.length; i++) {
+        //         arrayText = text[i].replace(/\n/i, ' ').trim().split(/\s/i);
+
+        //         arrayOrgaizado.push({
+        //             data: arrayText[0].trim(),
+        //             contrib: arrayText[num_col].trim(),
+        //             contributionType: true});
+        //     }
+
+        //     var replacePontos = function (valor) {
+        //         for (var i = 0; i < 4; i++) {
+        //             valor = valor.replace('.', '');
+        //         }
+        //         return parseFloat(valor.replace(',', '.'));
+        //     };
+
+        //     //var formatter = new Intl.NumberFormat('pt-BR', {minimumFractionDigits: 2, });
+
+        //     var somaContrib = function (valor1, valor2) {
+        //         return Number((replacePontos(valor1) + replacePontos(valor2)).toFixed(2)).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+        //     };
+
+        //     //Ordena o array pela data para organizar as secundarias
+        //     arrayOrgaizado.sort(function (a, b) {
+        //         return Date.parse(b.data) < Date.parse(a.data);
+        //     });
+
+        //     var teste = null;
+        //     arrayOrgaizado.filter(function (i, index) {
+        //         if (i.data != teste) {
+        //             i.contributionType = true;
+        //             teste = i.data;
+        //         } else {
+        //             i.contributionType = false; // falseo para secundarias
+        //         }
+        //     });
+
+        //     //reduzir o array somando item onde value.data+"-"+value.contributionType são iguais
+        //     var result = [];
+        //     arrayOrgaizado.reduce(function (res, value) {
+        //         if (!res[value.data + "-" + value.contributionType]) {
+        //             res[value.data + "-" + value.contributionType] = {
+        //                 contrib: "0,00",
+        //                 data: value.data,
+        //                 contributionType: value.contributionType
+        //             };
+        //             result.push(res[value.data + "-" + value.contributionType])
+        //         }
+        //         res[value.data + "-" + value.contributionType].contrib = somaContrib(res[value.data + "-" + value.contributionType].contrib, value.contrib);
+        //         return res;
+        //     }, {});
+
+        //     return result;
+        // }
+
+        // //montar o input na tela
+        // function postDadosContribuition(text, num_col) {
+
+        //     var calculationKeys = '<%= this . calculationKeys %>',
+        //             assuredId = '<%= this . assuredId %>';
+
+        //     var requestsSucedidas = 0;
+
+        //     var count = 0;
+        //     var contributionSum = 0.00;
+        //     var dataSub = [];
+        //     var contributionType = true;
+        //     var arrayOrgaizado = creatArrayObjetos(text, num_col);
+        //     var count1 = arrayOrgaizado.length;
+        //     //.trim().split(" ");
+
+        //     //console.log(arrayOrgaizado);
+
+        //     for (var i = 0; i < arrayOrgaizado.length; i++) {
+        //         dataSub = arrayOrgaizado[i].data.split("/");
+        //         contribFinal = arrayOrgaizado[i].contrib.replace(".", "").replace(".", "").replace(".", "");
+        //         contributionType = arrayOrgaizado[i].contributionType;
+        //         // console.log(dataSub);
+        //         // console.log(contribFinal);
+        //         // console.log(contributionType);
+        //          $('.inputs').append('<label>data: <input value="'+dataSub+'"/></label><label>Contribuição: <input value="'+contribFinal+'"/></label><label>Type: <input value="'+contributionType+'"/></label><input class=".teste_check" type="checkbox"><br>');
+
+        //             /*
+        //             $.ajax({
+        //                 type: "POST",
+        //                 url: "insert_values.aspx",
+        //                 data: {
+        //                     calcKeys: calculationKeys,
+        //                     assuredId: assuredId,
+        //                     minYear: dataSub[1],
+        //                     minMonth: dataSub[0],
+        //                     maxYear: dataSub[1],
+        //                     maxMonth: dataSub[0],
+        //                     value: contribFinal,
+        //                     contributionType: contributionType
+        //                 },
+
+        //                 error: function () {
+        //                     if (requestsSucedidas > 0) {
+        //                         // alert("Erro na importação, favor tentar novamente mais tarde");
+        //                         requestsSucedidas = -5000;
+        //                     }
+        //                 },
+        //                 success: function () {
+        //                     count++;
+        //                     if (requestsSucedidas >= 0) {
+        //                         requestsSucedidas += 1;
+        //                         //console.log('sucesso, requests sucedidas: ' + requestsSucedidas-1 + ', qtdTotal: ' + arrayOrgaizado.length);
+                               
+        //                         if (count == count1) {
+        //                             window.location.href = 'contribution_values.aspx?assuredId=' + assuredId + '&calculation=' + calculationKeys;
+        //                         }
+        //                     }
+        //                 }
+        //             });
+        //             */
+
+        //     }
+
+        // }
+
+        // /**
+        //  * Convert o texto em um array
+        //  * @returns {void}
+        //  */
+        // function newImportText() {
+
+        //     var text = $('.formTextBox').val();
+
+        //     // console.log(text);
+        //     if (text) {
+        //         $('.wait_icon').show();
+        //         text = text.trim().replace('\n', '\t');
+        //         //(\s|\t|\n)(\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})|(\s|\n|\t)(\d{2}\/\d{4})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})
+        //         // (\s|\n|\t)(\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2})|(\s|\t)(\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2})(\s|\t)(\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2});
+        //         //(\s|\n|\t|\r)((\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2}))(?!\s\d{2}\/\d{2}\/\d{4})
+        //         var empregado = null;
+        //         var facultativoOuIndividual = null;
+        //         empregado = text.match(/(\s|\n|\t|\r)((\d{2}\/\d{4})(\s)(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,\d{2}))(?!\s\d{2}\/\d{2}\/\d{4})/g);
+        //         facultativoOuIndividual = text.match(/(\s|\t|\n)(\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})|(\s|\n|\t)(\d{2}\/\d{4})(\s|\n|\t)(\d{2}\/\d{2}\/\d{4})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})(\s)(\d{1,3}\.?\d{1,3}\.?\d{0,3}\,\d{2})/g);
+
+        //       if (empregado) {
+        //             postDadosContribuition(empregado, 1);
+        //         }
+        //         if (facultativoOuIndividual) {
+        //             postDadosContribuition(facultativoOuIndividual, 3);
+        //         }
+
+        //     } else {
+        //         window.alert("Preencha o campo com os dados do CNIS.");
+        //     }
+        // }
+
+        // $(document).ready(function () {
+        //     $(".btnGo").click(function () {
+        //         newImportText();
+        //     });
+        // });
+    
+    </script>

@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <title>Leitor de informações</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" href="./bootstrap/css/bootstrap.min.css">
+    <link rel="stylesheet" href="./dropzone/dist/min/dropzone.min.css">
+    <style type="text/css">
+        textarea {
+            width: 500px;
+            height: 400px;
+        }
+    </style>
+</head>
+
+<body class="container-fluid">
+    <header>
+        <h3>Leitor de informações</h3>
+    </header>
+    <div class="row">
+        <div class="col-xs-7 col-sm-7 col-md-7 col-lg-7">
+            <div class="form-group">
+                <textarea name="formTextBox" id="formTextBox" class="formTextBox form-control" rows="10">
+                    Considerando o trecho de um texto extraído de uma página de pesquisa de vôos:
+
+"Melhor preço sem escalas R$ 1.367(1)
+Melhor preço com escalas R$ 994 (1)
+
+1 - Incluindo todas as taxas."
+                </textarea>
+            </div>
+
+            <div class="form-group">
+                <!-- <input type="file" id="file" name="file" /> -->
+                <button id="btn_import" class="btn btn-primary btnGo">Executar</button>
+            </div>
+        </div>
+        <div class="col-xs-5 col-sm-5 col-md-5 col-lg-5">
+            <h3>Resultado</h3>
+            <ul id="valores">
+            </ul>
+        </div>
+    </div>
+
+    <script src="./pdfjs/build/pdf.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+    <script src="./dropzone/dist/min/dropzone.min.js"></script>
+    <script type="text/javascript">
+
+        function resultado(valorList){
+            console.log(valorList);
+            
+            // for (let i = 0; i < valorList.length; i++) {
+            //     const element = valorList[i];
+            //     const rst = '<li class="list-group-item">'+(i+1)+' - '+element.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })+'</li>';
+            //     $('#valores').append(rst);
+            // }
+
+            const element = valorList[0];
+                const rst = '<li class="list-group-item"> Menor valor encontrado: '+element.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })+'</li>';
+                $('#valores').append(rst);
+
+        }
+
+
+        /**
+         * Convert o texto em um array
+         * @returns {void}
+         */
+        function newImportText(file_text, type) {
+
+            text = file_text;
+
+            if (text) {
+                $('.wait_icon').show();
+                let valores = null;
+                let valor_tratado = [];
+
+                if ((text.search(/(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,?\d{2})/g) > 0)) {
+                    valores = text.match(/(\d{0,3}\.?\d{0,3}\.?\d{0,3}\,?\d{2})/g);
+
+                    for (let index = 0; index < valores.length; index++) {
+                        const element = valores[index];
+                        valor_tratado.push(parseFloat(element.replace(/\./g, '').replace(/\,/g, '.')));
+                    }
+
+                  valor_tratado =  valor_tratado.sort((a, b) => a - b);
+                  resultado(valor_tratado);                  
+                }
+              
+            } else {
+                window.alert("Preencha o campo com os dados.");
+            }
+        }
+
+        $(".btnGo").click(function () {
+
+            var type = true;
+
+            if ($('.formTextBox').val().length > 5) {
+                newImportText($('.formTextBox').val(), type);
+            } else {
+                var var_pdf = document.getElementById('file');
+                var selectedFile = document.getElementById('file').files[0];
+                if (selectedFile) {
+                    lerPdf(window.URL.createObjectURL(selectedFile), type);
+                } else {
+                    alert("Selecione o arquivo ou cole o conteúdo");
+                }
+            }
+        });
+    </script>
+
+    <script>
+        function getPageText(pageNum, PDFDocumentInstance) {
+            // Return a Promise that is solved once the text of the page is retrieven
+            return new Promise(function (resolve, reject) {
+                PDFDocumentInstance.getPage(pageNum).then(function (pdfPage) {
+                    // The main trick to obtain the text of the PDF page, use the getTextContent method
+                    pdfPage.getTextContent().then(function (textContent) {
+                        var textItems = textContent.items;
+                        var finalString = "";
+
+                        // Concatenate the string of the item to the final string
+                        for (var i = 0; i < textItems.length; i++) {
+                            var item = textItems[i];
+                            finalString += item.str + " ";
+                        }
+
+                        // Solve promise with the text retrieven from the page
+                        resolve(finalString);
+                    });
+                });
+            });
+        }
+
+
+        function lerPdf(path, type) {
+            // Path to PDF file
+            // var PDF_URL = "./CNIS/CNIS- ADIMILSON PEREIRA DA SILVA.pdf";
+            var PDF_URL = path;
+            // Specify the path to the worker
+            PDFJS.workerSrc = './pdfjs/build/pdf.worker.js';
+
+
+            PDFJS.getDocument(PDF_URL).then(function (pdf) {
+
+                var pdfDocument = pdf;
+                // Create an array that will contain our promises 
+                var pagesPromises = [];
+
+
+
+                for (var i = 0; i < pdf.pdfInfo.numPages; i++) {
+                    // Required to prevent that i is always the total of pages
+                    (function (pageNumber) {
+                        // Store the promise of getPageText that returns the text of a page
+                        pagesPromises.push(getPageText(pageNumber, pdfDocument));
+                    })(i + 1);
+
+                }
+
+                // Execute all the promises
+                Promise.all(pagesPromises).then(function (pagesText) {
+
+                    // Display text of all the pages in the console
+                    // e.g ["Text content page 1", "Text content page 2", "Text content page 3" ... ]
+                    //console.log(pagesText);
+                    document.getElementById('formTextBox').innerHTML = pagesText;
+                    newImportText(document.getElementById('formTextBox').innerHTML, type);
+                });
+
+
+            }, function (reason) {
+                // PDF loading error
+                console.error(reason);
+            });
+
+
+        }
+
+    </script>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            Dropzone.autoDiscover = false;
+            //Simple Dropzonejs 
+            $("#file").dropzone({
+                url: "#",
+                maxFiles: 1,
+                addRemoveLinks: true,
+                success: function (file, response) {
+                    var fileName = response;
+                    file.previewElement.classList.add("dz-success");
+                    if (file) {
+                        lerPdf(window.URL.createObjectURL(file));
+                    } else {
+                        alert("Selecione o arquivo ou cole o conteúdo");
+                    }
+                },
+                error: function (file, response) {
+                    file.previewElement.classList.add("dz-error");
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>
